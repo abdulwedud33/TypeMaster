@@ -75,7 +75,7 @@ export default function ProgressPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-12">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-[#D4F36B] border-t-transparent rounded-full animate-spin" />
           <span className="text-xs text-[#858B99]">Loading your personal metrics...</span>
@@ -95,7 +95,6 @@ export default function ProgressPage() {
     longestStreak: 0,
   };
 
-  // Generate GitHub-style contribution heatmap squares for past 60 days
   const today = new Date();
   const calendarDays = [];
   for (let i = 59; i >= 0; i--) {
@@ -108,22 +107,22 @@ export default function ProgressPage() {
   }
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col gap-8">
+    <div className="w-full max-w-6xl mx-auto px-6 sm:px-10 py-8 flex flex-col gap-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#262B38] pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1E2333] pb-6">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#171A23] border border-[#262B38] text-xs font-semibold text-[#8B7CFF] mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#13161F] border border-[#1E2333] text-xs font-semibold text-[#8B7CFF] mb-2">
             <LineChart className="w-3.5 h-3.5" />
-            <span>Longitudinal Typing Analytics</span>
+            <span>Personal Performance Analytics</span>
           </div>
-          <h1 className="text-3xl font-black text-[#F1F3F5]">Progress & Analytics</h1>
+          <h1 className="text-3xl font-black text-[#F1F3F5] tracking-tight">Progress & Analytics</h1>
           <p className="text-xs sm:text-sm text-[#858B99] mt-1">
             Detailed performance tracking, weak keys, consistency streaks, and milestone achievements.
           </p>
         </div>
 
         {/* Time filters */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#171A23] border border-[#262B38] self-start sm:self-auto">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#13161F] border border-[#1E2333] self-start sm:self-auto">
           {(["7d", "30d", "90d", "all"] as const).map((filter) => (
             <button
               key={filter}
@@ -141,9 +140,9 @@ export default function ProgressPage() {
         </div>
       </div>
 
-      {/* Top 4 KPI Metrics */}
+      {/* Primary KPI Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl bg-[#171A23] border border-[#262B38] flex flex-col gap-1">
+        <div className="p-5 rounded-2xl bg-[#13161F] border border-[#1E2333] flex flex-col gap-1">
           <span className="text-xs text-[#858B99] font-medium flex items-center justify-between">
             Personal Best <Zap className="w-4 h-4 text-[#D4F36B]" />
           </span>
@@ -153,7 +152,7 @@ export default function ProgressPage() {
           <span className="text-[11px] text-[#858B99]">Top verified speed record</span>
         </div>
 
-        <div className="p-5 rounded-2xl bg-[#171A23] border border-[#262B38] flex flex-col gap-1">
+        <div className="p-5 rounded-2xl bg-[#13161F] border border-[#1E2333] flex flex-col gap-1">
           <span className="text-xs text-[#858B99] font-medium flex items-center justify-between">
             Lifetime Accuracy <Target className="w-4 h-4 text-[#8B7CFF]" />
           </span>
@@ -163,7 +162,7 @@ export default function ProgressPage() {
           <span className="text-[11px] text-[#858B99]">Mean across all keystrokes</span>
         </div>
 
-        <div className="p-5 rounded-2xl bg-[#171A23] border border-[#262B38] flex flex-col gap-1">
+        <div className="p-5 rounded-2xl bg-[#13161F] border border-[#1E2333] flex flex-col gap-1">
           <span className="text-xs text-[#858B99] font-medium flex items-center justify-between">
             Current / Longest Streak <Flame className="w-4 h-4 text-amber-400" />
           </span>
@@ -173,7 +172,7 @@ export default function ProgressPage() {
           <span className="text-[11px] text-[#858B99]">Consecutive practice days</span>
         </div>
 
-        <div className="p-5 rounded-2xl bg-[#171A23] border border-[#262B38] flex flex-col gap-1">
+        <div className="p-5 rounded-2xl bg-[#13161F] border border-[#1E2333] flex flex-col gap-1">
           <span className="text-xs text-[#858B99] font-medium flex items-center justify-between">
             Volume Typed <Keyboard className="w-4 h-4 text-emerald-400" />
           </span>
@@ -185,9 +184,9 @@ export default function ProgressPage() {
       </div>
 
       {/* Calendar Heatmap Section (GitHub style) */}
-      <div className="p-6 rounded-2xl bg-[#171A23] border border-[#262B38] flex flex-col gap-4">
+      <div className="p-6 rounded-2xl bg-[#13161F] border border-[#1E2333] flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-[#F1F3F5] flex items-center gap-2">
+          <h2 className="text-sm font-bold text-[#F1F3F5] flex items-center gap-2">
             <Calendar className="w-4 h-4 text-[#D4F36B]" /> Practice Activity Heatmap
           </h2>
           <span className="text-xs text-[#858B99]">Past 60 Days</span>
@@ -196,7 +195,7 @@ export default function ProgressPage() {
         <div className="overflow-x-auto pb-2">
           <div className="grid grid-flow-col grid-rows-7 gap-1.5 min-w-[600px]">
             {calendarDays.map((cd) => {
-              let levelClass = "bg-[#0D0F14] border-[#262B38]";
+              let levelClass = "bg-[#090A0F] border-[#1E2333]";
               if (cd.seconds > 1200) levelClass = "bg-[#D4F36B] border-[#D4F36B]";
               else if (cd.seconds > 600) levelClass = "bg-[#D4F36B]/70 border-[#D4F36B]/60";
               else if (cd.seconds > 180) levelClass = "bg-[#D4F36B]/40 border-[#D4F36B]/30";
@@ -215,7 +214,7 @@ export default function ProgressPage() {
 
         <div className="flex items-center justify-end gap-2 text-[10px] text-[#858B99] pt-1">
           <span>Less</span>
-          <div className="w-2.5 h-2.5 rounded-sm bg-[#0D0F14] border border-[#262B38]" />
+          <div className="w-2.5 h-2.5 rounded-sm bg-[#090A0F] border border-[#1E2333]" />
           <div className="w-2.5 h-2.5 rounded-sm bg-[#D4F36B]/20" />
           <div className="w-2.5 h-2.5 rounded-sm bg-[#D4F36B]/40" />
           <div className="w-2.5 h-2.5 rounded-sm bg-[#D4F36B]/70" />
@@ -224,11 +223,11 @@ export default function ProgressPage() {
         </div>
       </div>
 
-      {/* Weak Keys & Targeted Training Section */}
+      {/* Weak Keys & Milestone Badges */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="p-6 rounded-2xl bg-[#171A23] border border-[#262B38] flex flex-col gap-4">
+        <div className="p-6 rounded-2xl bg-[#13161F] border border-[#1E2333] flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-[#F1F3F5] flex items-center gap-2">
+            <h2 className="text-sm font-bold text-[#F1F3F5] flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-400" /> Weak Key Diagnostics
             </h2>
             <Link
@@ -248,7 +247,7 @@ export default function ProgressPage() {
               {weakKeys.map((wk) => (
                 <div
                   key={wk.character}
-                  className="p-3 rounded-xl bg-[#0D0F14] border border-[#262B38] flex flex-col items-center text-center gap-1"
+                  className="p-3 rounded-xl bg-[#090A0F] border border-[#1E2333] flex flex-col items-center text-center gap-1"
                 >
                   <span className="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/30 font-mono font-bold text-red-300 flex items-center justify-center text-base">
                     {wk.character === " " ? "␣" : wk.character}
@@ -259,7 +258,7 @@ export default function ProgressPage() {
               ))}
             </div>
           ) : (
-            <div className="p-8 border border-dashed border-[#262B38] rounded-xl flex flex-col items-center justify-center text-center gap-2 text-xs text-[#858B99]">
+            <div className="p-8 border border-dashed border-[#1E2333] rounded-xl flex flex-col items-center justify-center text-center gap-2 text-xs text-[#858B99]">
               <CheckCircle2 className="w-8 h-8 text-emerald-400" />
               <span className="font-semibold text-[#F1F3F5]">No frequent error patterns detected!</span>
               <span>Keep practicing and any problematic keys will automatically appear here.</span>
@@ -268,9 +267,9 @@ export default function ProgressPage() {
         </div>
 
         {/* Milestone Achievements */}
-        <div className="p-6 rounded-2xl bg-[#171A23] border border-[#262B38] flex flex-col gap-4">
+        <div className="p-6 rounded-2xl bg-[#13161F] border border-[#1E2333] flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-[#F1F3F5] flex items-center gap-2">
+            <h2 className="text-sm font-bold text-[#F1F3F5] flex items-center gap-2">
               <Trophy className="w-4 h-4 text-[#8B7CFF]" /> Milestones & Badges
             </h2>
             <span className="text-xs text-[#858B99]">Touch Typing Honors</span>
@@ -314,8 +313,8 @@ export default function ProgressPage() {
                 className={cn(
                   "p-3 rounded-xl border flex flex-col gap-1 transition-all",
                   ach.unlocked
-                    ? "bg-[#0D0F14] border-[#D4F36B]/40 text-[#F1F3F5]"
-                    : "bg-[#0D0F14]/40 border-[#262B38] opacity-50 text-[#858B99]"
+                    ? "bg-[#090A0F] border-[#D4F36B]/40 text-[#F1F3F5]"
+                    : "bg-[#090A0F]/40 border-[#1E2333] opacity-50 text-[#858B99]"
                 )}
               >
                 <div className="flex items-center justify-between">
@@ -335,4 +334,3 @@ export default function ProgressPage() {
     </div>
   );
 }
-

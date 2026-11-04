@@ -117,7 +117,6 @@ export default function PracticePage() {
         if (weakKeys.length === 0) {
           return "great typists practice difficult keys like p q z x and semicolons steadily";
         }
-        // Build targeted exercise using user's actual weak keys
         const chars = weakKeys.slice(0, 5);
         const drills = chars.map((c) => `${c}${c}${c} ${c}a${c} ${c}e${c} ${c}o${c}`).join(" ");
         return `${drills} focus on your problem keys with calm precision`;
@@ -155,34 +154,34 @@ export default function PracticePage() {
   ];
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-8 flex flex-col gap-6">
+    <div className="w-full max-w-5xl mx-auto px-6 sm:px-10 py-8 flex flex-col gap-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#262B38] pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1E2333] pb-6">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#171A23] border border-[#262B38] text-xs font-semibold text-[#8B7CFF] mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#13161F] border border-[#1E2333] text-xs font-semibold text-[#8B7CFF] mb-2">
             <PlaySquare className="w-3.5 h-3.5" />
-            <span>Customizable Practice Mode</span>
+            <span>Targeted Practice Arena</span>
           </div>
-          <h1 className="text-3xl font-black text-[#F1F3F5]">Flexible Practice Drills</h1>
+          <h1 className="text-3xl font-black text-[#F1F3F5] tracking-tight">Flexible Drills</h1>
           <p className="text-xs sm:text-sm text-[#858B99] mt-1">
-            Configure target character sets, timing, and custom text to hone specific skills.
+            Configure character sets, timing, and custom text to hone specific finger dexterity.
           </p>
         </div>
 
         <button
           onClick={() => setActiveText(generateText(category))}
-          className="px-4 py-2.5 rounded-xl bg-[#171A23] hover:bg-[#262B38] border border-[#262B38] text-xs font-semibold text-[#D4F36B] transition-all flex items-center gap-2 self-start sm:self-auto"
+          className="px-4 py-2.5 rounded-xl bg-[#13161F] hover:bg-[#1E2333] border border-[#1E2333] text-xs font-semibold text-[#D4F36B] transition-all flex items-center gap-2 self-start sm:self-auto"
         >
           <Shuffle className="w-4 h-4" /> Shuffle Text
         </button>
       </div>
 
       {/* Configuration Controls Bar */}
-      <div className="p-5 rounded-2xl bg-[#171A23] border border-[#262B38] flex flex-col gap-4">
+      <div className="p-5 rounded-2xl bg-[#13161F] border border-[#1E2333] flex flex-col gap-4">
         {/* Category Pills */}
         <div className="flex flex-col gap-2">
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#858B99]">
-            Practice Content:
+            Drill Category:
           </span>
           <div className="flex flex-wrap gap-1.5">
             {categories.map((cat) => (
@@ -193,7 +192,7 @@ export default function PracticePage() {
                   "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border",
                   category === cat.id
                     ? "bg-[#D4F36B] text-[#0D0F14] border-[#D4F36B] shadow-sm shadow-[#D4F36B]/20"
-                    : "bg-[#0D0F14] text-[#858B99] hover:text-[#F1F3F5] border-[#262B38]"
+                    : "bg-[#090A0F] text-[#858B99] hover:text-[#F1F3F5] border-[#1E2333]"
                 )}
               >
                 {cat.label}
@@ -203,7 +202,7 @@ export default function PracticePage() {
         </div>
 
         {/* Time Limit Selector */}
-        <div className="flex items-center gap-3 pt-2 border-t border-[#262B38]/60 text-xs">
+        <div className="flex items-center gap-3 pt-2 border-t border-[#1E2333] text-xs">
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#858B99] flex items-center gap-1">
             <Clock className="w-3.5 h-3.5" /> Duration Limit:
           </span>
@@ -222,7 +221,7 @@ export default function PracticePage() {
                   "px-2.5 py-1 rounded-md text-xs font-mono font-medium transition-all border",
                   duration === d.val
                     ? "bg-[#8B7CFF]/20 text-[#8B7CFF] border-[#8B7CFF]/40"
-                    : "bg-[#0D0F14] text-[#858B99] border-[#262B38]"
+                    : "bg-[#090A0F] text-[#858B99] border-[#1E2333]"
                 )}
               >
                 {d.label}
@@ -233,7 +232,7 @@ export default function PracticePage() {
 
         {/* Custom Textarea if custom mode */}
         {category === "custom" && (
-          <div className="flex flex-col gap-2 pt-2 border-t border-[#262B38]/60">
+          <div className="flex flex-col gap-2 pt-2 border-t border-[#1E2333]">
             <label className="text-xs font-semibold text-[#858B99]">
               Paste Your Custom Text Here:
             </label>
@@ -242,7 +241,7 @@ export default function PracticePage() {
               value={customText}
               onChange={(e) => setCustomText(e.target.value)}
               placeholder="Paste any article, documentation paragraph, or code snippet..."
-              className="w-full p-3 rounded-xl bg-[#0D0F14] border border-[#262B38] text-xs text-[#F1F3F5] focus:outline-none focus:border-[#D4F36B] font-mono"
+              className="w-full p-3 rounded-xl bg-[#090A0F] border border-[#1E2333] text-xs text-[#F1F3F5] focus:outline-none focus:border-[#D4F36B] font-mono"
             />
             <button
               onClick={handleApplyCustom}
@@ -265,4 +264,3 @@ export default function PracticePage() {
     </div>
   );
 }
-

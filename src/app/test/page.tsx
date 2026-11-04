@@ -49,20 +49,20 @@ export default function TestPage() {
     { id: "beginner", label: "Beginner" },
     { id: "intermediate", label: "Intermediate" },
     { id: "advanced", label: "Advanced" },
-    { id: "passages", label: "Literature Passages" },
-    { id: "code", label: "Programming Code" },
+    { id: "passages", label: "Literature" },
+    { id: "code", label: "Code Syntax" },
   ];
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-8 flex flex-col gap-6">
+    <div className="w-full max-w-5xl mx-auto px-6 sm:px-10 py-8 flex flex-col gap-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#262B38] pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1E2333] pb-6">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#171A23] border border-[#262B38] text-xs font-semibold text-[#D4F36B] mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#13161F] border border-[#1E2333] text-xs font-semibold text-[#D4F36B] mb-2">
             <Timer className="w-3.5 h-3.5" />
-            <span>Official Speed & Precision Benchmark</span>
+            <span>Speed & Accuracy Benchmark</span>
           </div>
-          <h1 className="text-3xl font-black text-[#F1F3F5]">Timed Typing Tests</h1>
+          <h1 className="text-3xl font-black text-[#F1F3F5] tracking-tight">Timed Typing Tests</h1>
           <p className="text-xs sm:text-sm text-[#858B99] mt-1">
             Test your verified Words Per Minute under timed conditions with strict accuracy grading.
           </p>
@@ -70,14 +70,14 @@ export default function TestPage() {
 
         <button
           onClick={() => setTestIndex((prev) => prev + 1)}
-          className="px-4 py-2.5 rounded-xl bg-[#171A23] hover:bg-[#262B38] border border-[#262B38] text-xs font-semibold text-[#8B7CFF] transition-all flex items-center gap-2 self-start sm:self-auto"
+          className="px-4 py-2.5 rounded-xl bg-[#13161F] hover:bg-[#1E2333] border border-[#1E2333] text-xs font-semibold text-[#8B7CFF] transition-all flex items-center gap-2 self-start sm:self-auto"
         >
           <Sparkles className="w-4 h-4" /> Change Passage
         </button>
       </div>
 
       {/* Test Controls Bar */}
-      <div className="p-5 rounded-2xl bg-[#171A23] border border-[#262B38] flex flex-wrap items-center justify-between gap-4">
+      <div className="p-5 rounded-2xl bg-[#13161F] border border-[#1E2333] flex flex-wrap items-center justify-between gap-4">
         {/* Duration selector */}
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold uppercase tracking-wider text-[#858B99]">Duration:</span>
@@ -90,7 +90,7 @@ export default function TestPage() {
                   "px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition-all border",
                   duration === d.val
                     ? "bg-[#D4F36B] text-[#0D0F14] border-[#D4F36B] shadow-sm"
-                    : "bg-[#0D0F14] text-[#858B99] hover:text-[#F1F3F5] border-[#262B38]"
+                    : "bg-[#090A0F] text-[#858B99] hover:text-[#F1F3F5] border-[#1E2333]"
                 )}
               >
                 {d.label}
@@ -111,7 +111,7 @@ export default function TestPage() {
                   "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all border",
                   difficulty === diff.id
                     ? "bg-[#8B7CFF]/20 text-[#8B7CFF] border-[#8B7CFF]/50"
-                    : "bg-[#0D0F14] text-[#858B99] hover:text-[#F1F3F5] border-[#262B38]"
+                    : "bg-[#090A0F] text-[#858B99] hover:text-[#F1F3F5] border-[#1E2333]"
                 )}
               >
                 {diff.label}
@@ -121,7 +121,7 @@ export default function TestPage() {
         </div>
       </div>
 
-      {/* Typing Engine with strict timer */}
+      {/* Typing Engine */}
       <TypingEngine
         key={`test_${duration}_${difficulty}_${testIndex}`}
         initialText={activeText}
@@ -132,4 +132,3 @@ export default function TestPage() {
     </div>
   );
 }
-

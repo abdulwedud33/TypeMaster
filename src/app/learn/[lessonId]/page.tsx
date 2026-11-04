@@ -55,10 +55,10 @@ export default function LessonRunnerPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className="flex-1 flex items-center justify-center p-12">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-[#D4F36B] border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs text-[#858B99]">Preparing exercise environment...</span>
+          <span className="text-xs text-[#858B99]">Preparing exercise arena...</span>
         </div>
       </div>
     );
@@ -66,7 +66,7 @@ export default function LessonRunnerPage() {
 
   if (!lesson) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center gap-4">
+      <div className="flex-1 flex flex-col items-center justify-center p-12 text-center gap-4">
         <h2 className="text-xl font-bold text-[#F1F3F5]">Lesson Not Found</h2>
         <Link
           href="/learn"
@@ -87,7 +87,6 @@ export default function LessonRunnerPage() {
   const isLastExercise = currentExerciseIndex >= totalExercises - 1;
 
   const handleExerciseComplete = (results: TypingResultData) => {
-    // If not last exercise, advance to next
     if (!isLastExercise) {
       setTimeout(() => {
         setCurrentExerciseIndex((prev) => prev + 1);
@@ -96,8 +95,8 @@ export default function LessonRunnerPage() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-8 flex flex-col gap-6">
-      {/* Top Navigation Back link & Level indicator */}
+    <div className="w-full max-w-5xl mx-auto px-6 sm:px-10 py-8 flex flex-col gap-6">
+      {/* Top Breadcrumb & Status */}
       <div className="flex items-center justify-between">
         <Link
           href="/learn"
@@ -107,26 +106,26 @@ export default function LessonRunnerPage() {
         </Link>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-[#171A23] border border-[#262B38] text-[#D4F36B]">
+          <span className="text-xs font-mono px-3 py-1 rounded-full bg-[#13161F] border border-[#1E2333] text-[#D4F36B]">
             Level {lesson.level} • Lesson {lesson.orderIndex}
           </span>
         </div>
       </div>
 
       {/* Lesson Header Information Card */}
-      <div className="p-6 rounded-2xl bg-[#171A23] border border-[#262B38] flex flex-col gap-3">
+      <div className="p-6 rounded-2xl bg-[#13161F] border border-[#1E2333] flex flex-col gap-3">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-black text-[#F1F3F5]">{lesson.title}</h1>
-          <span className="text-xs font-mono font-semibold text-[#858B99]">
-            Exercise {currentExerciseIndex + 1} of {totalExercises}
+          <span className="text-xs font-mono font-bold text-[#8B7CFF]">
+            Step {currentExerciseIndex + 1} of {totalExercises}
           </span>
         </div>
         <p className="text-xs sm:text-sm text-[#858B99] leading-relaxed">
           {lesson.description}
         </p>
 
-        {/* Step indicator dots */}
-        <div className="flex items-center gap-1.5 pt-2">
+        {/* Step indicator progress pills */}
+        <div className="flex items-center gap-1.5 pt-1">
           {lesson.exercises.map((_, idx) => (
             <div
               key={idx}
@@ -136,14 +135,14 @@ export default function LessonRunnerPage() {
                   ? "w-8 bg-[#D4F36B]"
                   : idx < currentExerciseIndex
                   ? "w-3 bg-emerald-500"
-                  : "w-3 bg-[#262B38]"
+                  : "w-3 bg-[#1E2333]"
               )}
             />
           ))}
         </div>
 
         {lesson.fingerNotes && (
-          <div className="mt-2 p-3 rounded-xl bg-[#0D0F14] border border-[#262B38] flex items-center gap-2.5 text-xs text-[#858B99]">
+          <div className="mt-2 p-3 rounded-xl bg-[#090A0F] border border-[#1E2333] flex items-center gap-2.5 text-xs text-[#858B99]">
             <HelpCircle className="w-4 h-4 text-[#8B7CFF] shrink-0" />
             <span>
               <strong className="text-[#F1F3F5]">Finger Position: </strong>
@@ -165,4 +164,3 @@ export default function LessonRunnerPage() {
     </div>
   );
 }
-

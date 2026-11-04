@@ -94,17 +94,17 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 py-8 flex flex-col gap-8">
+    <div className="w-full max-w-4xl mx-auto px-6 sm:px-10 py-8 flex flex-col gap-8">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#262B38] pb-6">
+      <div className="flex items-center justify-between border-b border-[#1E2333] pb-6">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#171A23] border border-[#262B38] text-xs font-semibold text-[#D4F36B] mb-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#13161F] border border-[#1E2333] text-xs font-semibold text-[#D4F36B] mb-2">
             <SettingsIcon className="w-3.5 h-3.5" />
-            <span>Preferences & Data Management</span>
+            <span>Platform Configuration</span>
           </div>
-          <h1 className="text-3xl font-black text-[#F1F3F5]">Platform Settings</h1>
+          <h1 className="text-3xl font-black text-[#F1F3F5] tracking-tight">Settings & Data</h1>
           <p className="text-xs sm:text-sm text-[#858B99] mt-1">
-            Personalize your typing environment, feedback audio, and goals.
+            Personalize your typing environment, sound feedback, and commitment targets.
           </p>
         </div>
 
@@ -118,26 +118,26 @@ export default function SettingsPage() {
       {/* Settings Sections */}
       <div className="flex flex-col gap-6">
         {/* Typing Interface Options */}
-        <div className="p-6 rounded-2xl bg-[#171A23] border border-[#262B38] flex flex-col gap-5">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[#8B7CFF]">
+        <div className="p-6 rounded-2xl bg-[#13161F] border border-[#1E2333] flex flex-col gap-5">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#8B7CFF]">
             Typing Experience
           </h2>
 
           {/* Sound Toggle */}
-          <div className="flex items-center justify-between pb-4 border-b border-[#262B38]">
+          <div className="flex items-center justify-between pb-4 border-b border-[#1E2333]">
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-semibold text-[#F1F3F5] flex items-center gap-2">
                 <Volume2 className="w-4 h-4 text-[#D4F36B]" /> Mechanical Keyboard Audio
               </span>
               <span className="text-xs text-[#858B99]">
-                Synthesizes low-latency click and error frequencies using Web Audio.
+                Synthesizes low-latency click and error frequencies using Web Audio API.
               </span>
             </div>
             <button
               onClick={() => saveSettings({ ...settings, soundEnabled: !settings.soundEnabled })}
               className={cn(
                 "w-12 h-6 rounded-full transition-colors relative p-0.5",
-                settings.soundEnabled ? "bg-[#D4F36B]" : "bg-[#262B38]"
+                settings.soundEnabled ? "bg-[#D4F36B]" : "bg-[#1E2333]"
               )}
             >
               <div
@@ -150,13 +150,13 @@ export default function SettingsPage() {
           </div>
 
           {/* Virtual Keyboard Toggle */}
-          <div className="flex items-center justify-between pb-4 border-b border-[#262B38]">
+          <div className="flex items-center justify-between pb-4 border-b border-[#1E2333]">
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-semibold text-[#F1F3F5] flex items-center gap-2">
                 <Eye className="w-4 h-4 text-[#8B7CFF]" /> Interactive Virtual Keyboard
               </span>
               <span className="text-xs text-[#858B99]">
-                Displays standard QWERTY on-screen key visualization during exercises.
+                Displays standard on-screen QWERTY key visualization during typing sessions.
               </span>
             </div>
             <button
@@ -165,7 +165,7 @@ export default function SettingsPage() {
               }
               className={cn(
                 "w-12 h-6 rounded-full transition-colors relative p-0.5",
-                settings.showVirtualKeyboard ? "bg-[#D4F36B]" : "bg-[#262B38]"
+                settings.showVirtualKeyboard ? "bg-[#D4F36B]" : "bg-[#1E2333]"
               )}
             >
               <div
@@ -193,7 +193,7 @@ export default function SettingsPage() {
               }
               className={cn(
                 "w-12 h-6 rounded-full transition-colors relative p-0.5",
-                settings.showFingerGuide ? "bg-[#D4F36B]" : "bg-[#262B38]"
+                settings.showFingerGuide ? "bg-[#D4F36B]" : "bg-[#1E2333]"
               )}
             >
               <div
@@ -207,13 +207,13 @@ export default function SettingsPage() {
         </div>
 
         {/* Goals & Preferences */}
-        <div className="p-6 rounded-2xl bg-[#171A23] border border-[#262B38] flex flex-col gap-5">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[#8B7CFF]">
+        <div className="p-6 rounded-2xl bg-[#13161F] border border-[#1E2333] flex flex-col gap-5">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-[#8B7CFF]">
             Goals & Benchmarks
           </h2>
 
           {/* Daily Goal */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#262B38]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#1E2333]">
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-semibold text-[#F1F3F5]">Daily Practice Target</span>
               <span className="text-xs text-[#858B99]">
@@ -229,7 +229,7 @@ export default function SettingsPage() {
                     "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border",
                     settings.dailyGoalMinutes === mins
                       ? "bg-[#D4F36B] text-[#0D0F14] border-[#D4F36B]"
-                      : "bg-[#0D0F14] text-[#858B99] border-[#262B38]"
+                      : "bg-[#090A0F] text-[#858B99] border-[#1E2333]"
                   )}
                 >
                   {mins}m
@@ -242,7 +242,7 @@ export default function SettingsPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-semibold text-[#F1F3F5]">
-                Default Typing Test Duration
+                Default Test Duration
               </span>
               <span className="text-xs text-[#858B99]">
                 Standard duration preselected when opening tests.
@@ -257,7 +257,7 @@ export default function SettingsPage() {
                     "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border",
                     settings.preferredTestDuration === s
                       ? "bg-[#8B7CFF] text-[#0D0F14] border-[#8B7CFF]"
-                      : "bg-[#0D0F14] text-[#858B99] border-[#262B38]"
+                      : "bg-[#090A0F] text-[#858B99] border-[#1E2333]"
                   )}
                 >
                   {s}s
@@ -267,13 +267,13 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Data & Privacy Management */}
-        <div className="p-6 rounded-2xl bg-[#171A23] border border-[#262B38] flex flex-col gap-5">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-rose-400">
+        {/* Data & Privacy */}
+        <div className="p-6 rounded-2xl bg-[#13161F] border border-[#1E2333] flex flex-col gap-5">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-rose-400">
             Data Management
           </h2>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#262B38]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#1E2333]">
             <div className="flex flex-col gap-0.5">
               <span className="text-sm font-semibold text-[#F1F3F5]">Export Session Records</span>
               <span className="text-xs text-[#858B99]">
@@ -282,7 +282,7 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={handleExportCSV}
-              className="px-4 py-2 rounded-xl bg-[#0D0F14] hover:bg-[#262B38] border border-[#262B38] text-xs font-semibold text-[#F1F3F5] transition-colors flex items-center gap-2 self-start sm:self-auto"
+              className="px-4 py-2 rounded-xl bg-[#090A0F] hover:bg-[#1E2333] border border-[#1E2333] text-xs font-semibold text-[#F1F3F5] transition-colors flex items-center gap-2 self-start sm:self-auto"
             >
               <Download className="w-4 h-4 text-[#D4F36B]" /> Export CSV
             </button>
@@ -308,7 +308,7 @@ export default function SettingsPage() {
                 </button>
                 <button
                   onClick={() => setResetConfirm(false)}
-                  className="px-3.5 py-2 rounded-xl bg-[#0D0F14] text-[#858B99] text-xs hover:text-[#F1F3F5]"
+                  className="px-3.5 py-2 rounded-xl bg-[#090A0F] text-[#858B99] text-xs hover:text-[#F1F3F5]"
                 >
                   Cancel
                 </button>
@@ -327,4 +327,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
