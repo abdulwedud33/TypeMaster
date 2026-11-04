@@ -3,7 +3,16 @@
 import React from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { RotateCcw, ArrowRight, Trophy, Zap, CheckCircle2, AlertTriangle, Delete } from "lucide-react";
+import {
+  RotateCcw,
+  ArrowRight,
+  Trophy,
+  Zap,
+  CheckCircle2,
+  AlertTriangle,
+  Delete,
+  Check,
+} from "lucide-react";
 
 export interface TypingResultData {
   sessionType: "lesson" | "test" | "practice" | "weak_keys" | "custom";
@@ -14,6 +23,8 @@ export interface TypingResultData {
   durationSeconds: number;
   correctCharacters: number;
   incorrectCharacters: number;
+  correctedErrors?: number;
+  uncorrectedErrors?: number;
   totalKeystrokes: number;
   backspaceCount: number;
   mistypedKeys: Record<string, number>;
@@ -71,11 +82,11 @@ export function ResultsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="w-full max-w-xl rounded-2xl bg-[#171A23] border border-[#262B38] p-6 sm:p-8 shadow-2xl flex flex-col gap-6">
+      <div className="w-full max-w-xl rounded-3xl bg-[#13161F] border border-[#1E2333] p-6 sm:p-8 shadow-2xl flex flex-col gap-6">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-[#262B38]/80 pb-4">
+        <div className="flex items-center justify-between border-b border-[#1E2333] pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#D4F36B]/15 border border-[#D4F36B]/30 flex items-center justify-center text-[#D4F36B]">
+            <div className="w-10 h-10 rounded-2xl bg-[#D4F36B]/15 border border-[#D4F36B]/30 flex items-center justify-center text-[#D4F36B]">
               <Trophy className="w-5 h-5" />
             </div>
             <div>
@@ -95,46 +106,66 @@ export function ResultsModal({
 
         {/* Primary Stats Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-4 rounded-xl bg-[#0D0F14] border border-[#262B38] flex flex-col">
+          <div className="p-4 rounded-2xl bg-[#090A0F] border border-[#1E2333] flex flex-col">
             <span className="text-xs text-[#858B99] font-medium">Speed</span>
-            <span className="text-3xl font-extrabold font-mono text-[#D4F36B]">{data.wpm}</span>
+            <span className="text-3xl font-black font-mono text-[#D4F36B]">{data.wpm}</span>
             <span className="text-[10px] text-[#858B99]">Net WPM</span>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#0D0F14] border border-[#262B38] flex flex-col">
+          <div className="p-4 rounded-2xl bg-[#090A0F] border border-[#1E2333] flex flex-col">
             <span className="text-xs text-[#858B99] font-medium">Accuracy</span>
-            <span className="text-3xl font-extrabold font-mono text-[#F1F3F5]">{data.accuracy}%</span>
-            <span className="text-[10px] text-[#858B99]">{data.incorrectCharacters} errors</span>
+            <span className="text-3xl font-black font-mono text-[#F1F3F5]">{data.accuracy}%</span>
+            <span className="text-[10px] text-[#858B99]">{data.incorrectCharacters} total errors</span>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#0D0F14] border border-[#262B38] flex flex-col">
+          <div className="p-4 rounded-2xl bg-[#090A0F] border border-[#1E2333] flex flex-col">
             <span className="text-xs text-[#858B99] font-medium">Gross WPM</span>
-            <span className="text-3xl font-extrabold font-mono text-[#8B7CFF]">{data.grossWpm}</span>
+            <span className="text-3xl font-black font-mono text-[#8B7CFF]">{data.grossWpm}</span>
             <span className="text-[10px] text-[#858B99]">Raw velocity</span>
           </div>
 
-          <div className="p-4 rounded-xl bg-[#0D0F14] border border-[#262B38] flex flex-col">
+          <div className="p-4 rounded-2xl bg-[#090A0F] border border-[#1E2333] flex flex-col">
             <span className="text-xs text-[#858B99] font-medium">Time</span>
-            <span className="text-3xl font-extrabold font-mono text-[#F1F3F5]">{data.durationSeconds}s</span>
+            <span className="text-3xl font-black font-mono text-[#F1F3F5]">{data.durationSeconds}s</span>
             <span className="text-[10px] text-[#858B99]">{data.totalKeystrokes} keystrokes</span>
           </div>
         </div>
 
-        {/* Breakdown details */}
-        <div className="p-4 rounded-xl bg-[#0D0F14]/60 border border-[#262B38]/60 flex flex-col gap-3 text-xs text-[#858B99]">
+        {/* Detailed Breakdown */}
+        <div className="p-4 rounded-2xl bg-[#090A0F] border border-[#1E2333] flex flex-col gap-2.5 text-xs text-[#858B99]">
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 text-emerald-400">
               <CheckCircle2 className="w-3.5 h-3.5" /> Correct Characters
             </span>
             <span className="font-mono text-[#F1F3F5] font-semibold">{data.correctCharacters}</span>
           </div>
+
           <div className="flex items-center justify-between">
             <span className="flex items-center gap-1.5 text-rose-400">
-              <AlertTriangle className="w-3.5 h-3.5" /> Mistyped Characters
+              <AlertTriangle className="w-3.5 h-3.5" /> Total Mistakes Made
             </span>
             <span className="font-mono text-[#F1F3F5] font-semibold">{data.incorrectCharacters}</span>
           </div>
-          <div className="flex items-center justify-between">
+
+          {data.correctedErrors !== undefined && (
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-teal-400">
+                <Check className="w-3.5 h-3.5" /> Corrected with Backspace
+              </span>
+              <span className="font-mono text-[#F1F3F5] font-semibold">{data.correctedErrors}</span>
+            </div>
+          )}
+
+          {data.uncorrectedErrors !== undefined && data.uncorrectedErrors > 0 && (
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-amber-400">
+                <AlertTriangle className="w-3.5 h-3.5" /> Uncorrected in Text
+              </span>
+              <span className="font-mono text-[#F1F3F5] font-semibold">{data.uncorrectedErrors}</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-1 border-t border-[#1E2333]">
             <span className="flex items-center gap-1.5 text-amber-400">
               <Delete className="w-3.5 h-3.5" /> Backspaces Used
             </span>
@@ -152,7 +183,7 @@ export function ResultsModal({
               {sortedMistakes.slice(0, 6).map(([char, count]) => (
                 <div
                   key={char}
-                  className="px-2.5 py-1 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-1.5 text-xs text-red-300 font-mono"
+                  className="px-2.5 py-1 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-1.5 text-xs text-red-300 font-mono"
                 >
                   <span className="font-bold">{char === " " ? "Space" : char}</span>
                   <span className="text-[10px] opacity-75">({count}x)</span>
@@ -166,7 +197,7 @@ export function ResultsModal({
         <div className="flex items-center justify-end gap-3 pt-2">
           <button
             onClick={onRetry}
-            className="px-4 py-2.5 rounded-xl bg-[#0D0F14] hover:bg-[#262B38] text-[#F1F3F5] text-sm font-semibold transition-colors flex items-center gap-2 border border-[#262B38]"
+            className="px-4 py-2.5 rounded-xl bg-[#090A0F] hover:bg-[#1E2333] text-[#F1F3F5] text-xs font-semibold transition-colors flex items-center gap-2 border border-[#1E2333]"
           >
             <RotateCcw className="w-4 h-4" /> Try Again
           </button>
@@ -174,14 +205,14 @@ export function ResultsModal({
           {nextLessonHref ? (
             <Link
               href={nextLessonHref}
-              className="px-5 py-2.5 rounded-xl bg-[#D4F36B] hover:bg-[#bde050] text-[#0D0F14] text-sm font-bold transition-colors flex items-center gap-2 shadow-lg shadow-[#D4F36B]/20"
+              className="px-5 py-2.5 rounded-xl bg-[#D4F36B] hover:bg-[#bde050] text-[#0D0F14] text-xs font-bold transition-colors flex items-center gap-2 shadow-lg shadow-[#D4F36B]/20 uppercase tracking-wider"
             >
               Next Lesson <ArrowRight className="w-4 h-4" />
             </Link>
           ) : (
             <button
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl bg-[#D4F36B] hover:bg-[#bde050] text-[#0D0F14] text-sm font-bold transition-colors flex items-center gap-2 shadow-lg shadow-[#D4F36B]/20"
+              className="px-5 py-2.5 rounded-xl bg-[#D4F36B] hover:bg-[#bde050] text-[#0D0F14] text-xs font-bold transition-colors flex items-center gap-2 shadow-lg shadow-[#D4F36B]/20 uppercase tracking-wider"
             >
               Continue
             </button>
@@ -191,4 +222,3 @@ export function ResultsModal({
     </div>
   );
 }
-

@@ -76,7 +76,7 @@ export const KEY_TO_FINGER: Record<string, FingerName> = {
   ",": "middleRight", "<": "middleRight",
 
   // Right ring
-  "9": "middleRight", "(": "middleRight",
+  "9": "ringRight", "(": "ringRight",
   "o": "ringRight", "O": "ringRight",
   "l": "ringRight", "L": "ringRight",
   ".": "ringRight", ">": "ringRight",
