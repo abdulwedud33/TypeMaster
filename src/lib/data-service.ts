@@ -3,7 +3,7 @@ import { eq, desc, and, sql } from "drizzle-orm";
 import { SEED_LESSONS, SEED_ACHIEVEMENTS } from "@/db/seed-data";
 import { TypingResultData } from "@/components/results-modal";
 
-// In-memory demo store for when Neon DB is not yet connected or during demo testing
+// Local in-memory store for guest/demo sessions or offline fallback
 interface LocalStoreUser {
   id: string;
   name: string;
@@ -30,8 +30,7 @@ interface LocalStoreUser {
 const memoryStore: Record<string, LocalStoreUser> = {};
 
 function getTodayString(): string {
-  const d = new Date();
-  return d.toISOString().split("T")[0];
+  return new Date().toISOString().split("T")[0];
 }
 
 function getYesterdayString(): string {
@@ -40,7 +39,11 @@ function getYesterdayString(): string {
   return d.toISOString().split("T")[0];
 }
 
-export function getOrCreateLocalUser(userId: string, name = "Demo Typist", email = "demo@typemaster.local"): LocalStoreUser {
+export function getOrCreateLocalUser(
+  userId: string,
+  name = "Demo Typist",
+  email = "demo@typemaster.local"
+): LocalStoreUser {
   if (!memoryStore[userId]) {
     memoryStore[userId] = {
       id: userId,
@@ -73,13 +76,27 @@ export function getOrCreateLocalUser(userId: string, name = "Demo Typist", email
 export async function getCurriculumLessons(userId?: string) {
   if (isDatabaseConfigured && db) {
     try {
-      const dbLessons = await db.select().from(schema.lessons).orderBy(schema.lessons.orderIndex);
+      const dbLessons = await db
+        .select()
+        .from(schema.lessons)
+        .orderBy(schema.lessons.orderIndex);
+
       if (dbLessons.length > 0) {
         let attempts: any[] = [];
         if (userId) {
-          attempts = await db.select().from(schema.lessonAttempts).where(eq(schema.lessonAttempts.userId, userId));
+          attempts = await db
+            .select()
+            .from(schema.lessonAttempts)
+            .where(eq(schema.lessonAttempts.userId, userId));
         }
-        const attemptMap = new Map(attempts.map((a) => [a.lessonId, a]));
+
+        const attemptMap = new Map<string, { wpm: number; accuracy: number }>();
+        for (const a of attempts) {
+          const existing = attemptMap.get(a.lessonId);
+          if (!existing || a.wpm > existing.wpm) {
+            attemptMap.set(a.lessonId, { wpm: a.wpm, accuracy: a.accuracy });
+          }
+        }
 
         return dbLessons.map((l) => ({
           ...l,
@@ -89,11 +106,11 @@ export async function getCurriculumLessons(userId?: string) {
         }));
       }
     } catch (e) {
-      console.warn("Database lookup fallback to seed data:", e);
+      console.warn("Database lessons lookup fallback to seed:", e);
     }
   }
 
-  // Fallback to embedded seed lessons
+  // Local fallback
   const localUser = userId ? getOrCreateLocalUser(userId) : null;
   return SEED_LESSONS.map((l) => {
     const attempt = localUser?.lessonAttempts[l.id];
@@ -119,7 +136,7 @@ export async function recordTypingResult(userId: string, data: TypingResultData)
 
   if (isDatabaseConfigured && db) {
     try {
-      // 1. Record session or lesson attempt
+      // 1. Record individual lesson attempt or session
       if (data.sessionType === "lesson" && data.lessonId) {
         await db.insert(schema.lessonAttempts).values({
           id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
@@ -129,7 +146,7 @@ export async function recordTypingResult(userId: string, data: TypingResultData)
           accuracy: data.accuracy,
           correctCharacters: data.correctCharacters,
           incorrectCharacters: data.incorrectCharacters,
-          durationSeconds: data.durationSeconds,
+          durationSeconds: Math.max(1, Math.round(data.durationSeconds)),
         });
       }
 
@@ -137,9 +154,9 @@ export async function recordTypingResult(userId: string, data: TypingResultData)
         id: `sess_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
         userId,
         sessionType: data.sessionType,
-        mode: data.sessionType === "test" ? `time_${data.durationSeconds}` : "practice",
+        mode: data.sessionType === "test" ? `time_${Math.round(data.durationSeconds)}` : "practice",
         difficulty: "intermediate",
-        durationSeconds: data.durationSeconds,
+        durationSeconds: Math.max(1, Math.round(data.durationSeconds)),
         wpm: data.wpm,
         grossWpm: data.grossWpm,
         accuracy: data.accuracy,
@@ -149,17 +166,36 @@ export async function recordTypingResult(userId: string, data: TypingResultData)
         backspaceCount: data.backspaceCount,
       });
 
-      // 2. Update user progress
-      const existingProgress = await db.select().from(schema.userProgress).where(eq(schema.userProgress.userId, userId));
+      // 2. Count UNIQUE lessons completed by this user
+      const uniqueLessonRows = await db
+        .select({ lessonId: schema.lessonAttempts.lessonId })
+        .from(schema.lessonAttempts)
+        .where(eq(schema.lessonAttempts.userId, userId));
+
+      const uniqueLessonSet = new Set(uniqueLessonRows.map((r) => r.lessonId));
+      if (data.sessionType === "lesson" && data.lessonId) {
+        uniqueLessonSet.add(data.lessonId);
+      }
+      const distinctLessonsCompleted = uniqueLessonSet.size;
+
+      // Compute current level based on distinct lessons completed (approx 3-4 lessons per level)
+      const computedLevel = Math.min(10, Math.max(1, Math.floor(distinctLessonsCompleted / 3.5) + 1));
+
+      // 3. Update User Progress & Streaks
+      const existingProgress = await db
+        .select()
+        .from(schema.userProgress)
+        .where(eq(schema.userProgress.userId, userId));
+
       let progress = existingProgress[0];
 
       if (!progress) {
         await db.insert(schema.userProgress).values({
           id: `prog_${userId}`,
           userId,
-          currentLevel: 1,
-          lessonsCompleted: data.sessionType === "lesson" ? 1 : 0,
-          totalPracticeSeconds: data.durationSeconds,
+          currentLevel: computedLevel,
+          lessonsCompleted: distinctLessonsCompleted,
+          totalPracticeSeconds: Math.max(1, Math.round(data.durationSeconds)),
           totalCharactersTyped: data.correctCharacters,
           bestWpm: data.wpm,
           averageAccuracy: data.accuracy,
@@ -172,21 +208,32 @@ export async function recordTypingResult(userId: string, data: TypingResultData)
         let newStreak = progress.currentStreak;
 
         if (lastDate === yesterday) {
+          // Practiced consecutive day: increase streak
           newStreak += 1;
-        } else if (lastDate !== today) {
+        } else if (lastDate === today) {
+          // Already practiced today: keep current streak
+          newStreak = progress.currentStreak;
+        } else {
+          // Missed at least one day: restart streak at 1
           newStreak = 1;
         }
+
         const longestStreak = Math.max(progress.longestStreak, newStreak);
-        const newTotalSecs = progress.totalPracticeSeconds + data.durationSeconds;
+        const newTotalSecs = progress.totalPracticeSeconds + Math.max(1, Math.round(data.durationSeconds));
         const newTotalChars = progress.totalCharactersTyped + data.correctCharacters;
         const newBestWpm = Math.max(progress.bestWpm, data.wpm);
-        const newLessonsCompleted = progress.lessonsCompleted + (data.sessionType === "lesson" ? 1 : 0);
-        const newAvgAccuracy = Math.round(((progress.averageAccuracy + data.accuracy) / 2) * 10) / 10;
+
+        // Weighted rolling average accuracy
+        const newAvgAccuracy =
+          progress.averageAccuracy === 0 || progress.totalPracticeSeconds === 0
+            ? data.accuracy
+            : Math.round(((progress.averageAccuracy * 0.85) + (data.accuracy * 0.15)) * 10) / 10;
 
         await db
           .update(schema.userProgress)
           .set({
-            lessonsCompleted: newLessonsCompleted,
+            currentLevel: computedLevel,
+            lessonsCompleted: distinctLessonsCompleted,
             totalPracticeSeconds: newTotalSecs,
             totalCharactersTyped: newTotalChars,
             bestWpm: newBestWpm,
@@ -199,17 +246,19 @@ export async function recordTypingResult(userId: string, data: TypingResultData)
           .where(eq(schema.userProgress.userId, userId));
       }
 
-      // 3. Upsert Daily Activity
+      // 4. Upsert Daily Activity for Today
       const existingDaily = await db
         .select()
         .from(schema.dailyActivity)
         .where(and(eq(schema.dailyActivity.userId, userId), eq(schema.dailyActivity.activityDate, today)));
 
+      const durationSecs = Math.max(1, Math.round(data.durationSeconds));
+
       if (existingDaily.length > 0) {
         await db
           .update(schema.dailyActivity)
           .set({
-            practiceSeconds: existingDaily[0].practiceSeconds + data.durationSeconds,
+            practiceSeconds: existingDaily[0].practiceSeconds + durationSecs,
             charactersTyped: existingDaily[0].charactersTyped + data.correctCharacters,
             lessonsCompleted: existingDaily[0].lessonsCompleted + (data.sessionType === "lesson" ? 1 : 0),
             testsCompleted: existingDaily[0].testsCompleted + (data.sessionType === "test" ? 1 : 0),
@@ -220,14 +269,14 @@ export async function recordTypingResult(userId: string, data: TypingResultData)
           id: `act_${Date.now()}`,
           userId,
           activityDate: today,
-          practiceSeconds: data.durationSeconds,
+          practiceSeconds: durationSecs,
           charactersTyped: data.correctCharacters,
           lessonsCompleted: data.sessionType === "lesson" ? 1 : 0,
           testsCompleted: data.sessionType === "test" ? 1 : 0,
         });
       }
 
-      // 4. Update Key Statistics
+      // 5. Update Key Statistics
       for (const [char, count] of Object.entries(data.mistypedKeys)) {
         await db
           .insert(schema.keyStatistics)
@@ -270,13 +319,16 @@ export async function recordTypingResult(userId: string, data: TypingResultData)
           });
       }
 
+      // 6. Check and Unlock Milestone Achievements
+      await checkAndUnlockAchievements(userId, data);
+
       return { success: true };
     } catch (err) {
       console.error("Neon DB save failed, persisting locally:", err);
     }
   }
 
-  // Local Memory fallback
+  // Local Memory Fallback
   const user = getOrCreateLocalUser(userId);
   user.sessions.unshift(data);
 
@@ -286,20 +338,24 @@ export async function recordTypingResult(userId: string, data: TypingResultData)
       accuracy: data.accuracy,
       completedAt: data.completedAt,
     };
-    user.progress.lessonsCompleted += 1;
+    user.progress.lessonsCompleted = Object.keys(user.lessonAttempts).length;
+    user.progress.currentLevel = Math.min(10, Math.max(1, Math.floor(user.progress.lessonsCompleted / 3.5) + 1));
   }
 
-  user.progress.totalPracticeSeconds += data.durationSeconds;
+  const durationSecs = Math.max(1, Math.round(data.durationSeconds));
+  user.progress.totalPracticeSeconds += durationSecs;
   user.progress.totalCharactersTyped += data.correctCharacters;
   user.progress.bestWpm = Math.max(user.progress.bestWpm, data.wpm);
   user.progress.averageAccuracy =
     user.progress.averageAccuracy === 0
       ? data.accuracy
-      : Math.round(((user.progress.averageAccuracy + data.accuracy) / 2) * 10) / 10;
+      : Math.round(((user.progress.averageAccuracy * 0.85) + (data.accuracy * 0.15)) * 10) / 10;
 
   if (user.progress.lastPracticeDate === yesterday) {
     user.progress.currentStreak += 1;
-  } else if (user.progress.lastPracticeDate !== today) {
+  } else if (user.progress.lastPracticeDate === today) {
+    // Keep streak
+  } else {
     user.progress.currentStreak = 1;
   }
   user.progress.longestStreak = Math.max(user.progress.longestStreak, user.progress.currentStreak);
@@ -309,7 +365,7 @@ export async function recordTypingResult(userId: string, data: TypingResultData)
   if (!user.daily[today]) {
     user.daily[today] = { practiceSeconds: 0, charactersTyped: 0, lessons: 0, tests: 0 };
   }
-  user.daily[today].practiceSeconds += data.durationSeconds;
+  user.daily[today].practiceSeconds += durationSecs;
   user.daily[today].charactersTyped += data.correctCharacters;
   if (data.sessionType === "lesson") user.daily[today].lessons += 1;
   if (data.sessionType === "test") user.daily[today].tests += 1;
@@ -327,12 +383,71 @@ export async function recordTypingResult(userId: string, data: TypingResultData)
   return { success: true };
 }
 
+// ----------------- MILESTONE ACHIEVEMENTS CHECKER -----------------
+
+async function checkAndUnlockAchievements(userId: string, data: TypingResultData) {
+  if (!isDatabaseConfigured || !db) return;
+  try {
+    const progressList = await db.select().from(schema.userProgress).where(eq(schema.userProgress.userId, userId));
+    const progress = progressList[0];
+    if (!progress) return;
+
+    const allAchievements = await db.select().from(schema.achievements);
+    const existingUnlocked = await db
+      .select({ id: schema.userAchievements.achievementId })
+      .from(schema.userAchievements)
+      .where(eq(schema.userAchievements.userId, userId));
+
+    const unlockedSet = new Set(existingUnlocked.map((u) => u.id));
+
+    for (const ach of allAchievements) {
+      if (unlockedSet.has(ach.id)) continue;
+
+      let eligible = false;
+      switch (ach.requirementType) {
+        case "lessons_completed":
+          eligible = progress.lessonsCompleted >= ach.requirementValue;
+          break;
+        case "wpm_reached":
+          eligible = progress.bestWpm >= ach.requirementValue;
+          break;
+        case "accuracy_reached":
+          eligible = data.accuracy >= ach.requirementValue;
+          break;
+        case "streak_days":
+          eligible = progress.currentStreak >= ach.requirementValue;
+          break;
+        case "characters_typed":
+          eligible = progress.totalCharactersTyped >= ach.requirementValue;
+          break;
+      }
+
+      if (eligible) {
+        await db.insert(schema.userAchievements).values({
+          id: `uach_${Date.now()}_${ach.id}`,
+          userId,
+          achievementId: ach.id,
+        }).onConflictDoNothing();
+      }
+    }
+  } catch (err) {
+    console.warn("Achievement check warning:", err);
+  }
+}
+
 // ----------------- DASHBOARD & STATS -----------------
 
 export async function getUserDashboardData(userId: string) {
+  const today = getTodayString();
+  const yesterday = getYesterdayString();
+
   if (isDatabaseConfigured && db) {
     try {
-      const progressRes = await db.select().from(schema.userProgress).where(eq(schema.userProgress.userId, userId));
+      const progressRes = await db
+        .select()
+        .from(schema.userProgress)
+        .where(eq(schema.userProgress.userId, userId));
+
       const sessions = await db
         .select()
         .from(schema.typingSessions)
@@ -359,8 +474,16 @@ export async function getUserDashboardData(userId: string) {
         lastPracticeDate: null,
       };
 
+      // Accurate streak verification
+      const isStreakActive =
+        progress.lastPracticeDate === today || progress.lastPracticeDate === yesterday;
+      const displayStreak = isStreakActive ? progress.currentStreak : 0;
+
       return {
-        progress,
+        progress: {
+          ...progress,
+          currentStreak: displayStreak,
+        },
         recentSessions: sessions,
         weeklyActivity: daily.reverse(),
       };
@@ -370,6 +493,9 @@ export async function getUserDashboardData(userId: string) {
   }
 
   const local = getOrCreateLocalUser(userId);
+  const isStreakActive =
+    local.progress.lastPracticeDate === today || local.progress.lastPracticeDate === yesterday;
+
   const weekly = Object.entries(local.daily)
     .slice(-7)
     .map(([date, val]) => ({
@@ -381,9 +507,103 @@ export async function getUserDashboardData(userId: string) {
     }));
 
   return {
-    progress: local.progress,
+    progress: {
+      ...local.progress,
+      currentStreak: isStreakActive ? local.progress.currentStreak : 0,
+    },
     recentSessions: local.sessions.slice(0, 10),
     weeklyActivity: weekly,
+  };
+}
+
+// ----------------- LONGITUDINAL PROGRESS (90 DAYS & HEATMAP) -----------------
+
+export async function getUserProgressData(userId: string) {
+  const today = getTodayString();
+  const yesterday = getYesterdayString();
+
+  if (isDatabaseConfigured && db) {
+    try {
+      const progressRes = await db
+        .select()
+        .from(schema.userProgress)
+        .where(eq(schema.userProgress.userId, userId));
+
+      const sessions = await db
+        .select()
+        .from(schema.typingSessions)
+        .where(eq(schema.typingSessions.userId, userId))
+        .orderBy(desc(schema.typingSessions.completedAt))
+        .limit(50);
+
+      // Fetch full past 90 days for heatmap
+      const daily = await db
+        .select()
+        .from(schema.dailyActivity)
+        .where(eq(schema.dailyActivity.userId, userId))
+        .orderBy(desc(schema.dailyActivity.activityDate))
+        .limit(90);
+
+      // Unlocked user achievements
+      const userAchs = await db
+        .select({
+          achievementId: schema.userAchievements.achievementId,
+          unlockedAt: schema.userAchievements.unlockedAt,
+        })
+        .from(schema.userAchievements)
+        .where(eq(schema.userAchievements.userId, userId));
+
+      const progress = progressRes[0] || {
+        currentLevel: 1,
+        lessonsCompleted: 0,
+        totalPracticeSeconds: 0,
+        totalCharactersTyped: 0,
+        bestWpm: 0,
+        averageAccuracy: 0,
+        currentStreak: 0,
+        longestStreak: 0,
+        lastPracticeDate: null,
+      };
+
+      const isStreakActive =
+        progress.lastPracticeDate === today || progress.lastPracticeDate === yesterday;
+
+      return {
+        progress: {
+          ...progress,
+          currentStreak: isStreakActive ? progress.currentStreak : 0,
+        },
+        recentSessions: sessions,
+        heatmapActivity: daily.reverse(),
+        unlockedAchievements: userAchs.map((a) => a.achievementId),
+      };
+    } catch (err) {
+      console.warn("DB progress query fallback:", err);
+    }
+  }
+
+  const local = getOrCreateLocalUser(userId);
+  const isStreakActive =
+    local.progress.lastPracticeDate === today || local.progress.lastPracticeDate === yesterday;
+
+  const dailyList = Object.entries(local.daily)
+    .slice(-90)
+    .map(([date, val]) => ({
+      activityDate: date,
+      practiceSeconds: val.practiceSeconds,
+      charactersTyped: val.charactersTyped,
+      lessonsCompleted: val.lessons,
+      testsCompleted: val.tests,
+    }));
+
+  return {
+    progress: {
+      ...local.progress,
+      currentStreak: isStreakActive ? local.progress.currentStreak : 0,
+    },
+    recentSessions: local.sessions.slice(0, 50),
+    heatmapActivity: dailyList,
+    unlockedAchievements: local.unlockedAchievements,
   };
 }
 
@@ -434,4 +654,3 @@ export async function getUserWeakKeys(userId: string) {
     .sort((a, b) => b.errors - a.errors)
     .slice(0, 8);
 }
-
