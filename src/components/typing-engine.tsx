@@ -15,6 +15,8 @@ export interface TypingEngineProps {
   durationLimit?: number; // in seconds (for timed tests)
   onComplete?: (results: TypingResultData) => void;
   showKeyboardToggle?: boolean;
+  showResultsModal?: boolean;
+  nextLessonHref?: string;
 }
 
 export function TypingEngine({
@@ -24,6 +26,8 @@ export function TypingEngine({
   durationLimit,
   onComplete,
   showKeyboardToggle = true,
+  showResultsModal = true,
+  nextLessonHref,
 }: TypingEngineProps) {
   const [text, setText] = useState<string>(initialText.trim());
   const [typedChars, setTypedChars] = useState<string[]>([]);
@@ -451,11 +455,12 @@ export function TypingEngine({
       )}
 
       {/* Results Modal */}
-      {isCompleted && resultsData && (
+      {showResultsModal && isCompleted && resultsData && (
         <ResultsModal
           data={resultsData}
           onRetry={resetSession}
           onClose={() => setIsCompleted(false)}
+          nextLessonHref={nextLessonHref}
         />
       )}
     </div>

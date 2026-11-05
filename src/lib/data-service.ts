@@ -1,5 +1,5 @@
 import { db, schema, isDatabaseConfigured } from "@/db";
-import { eq, desc, and, sql } from "drizzle-orm";
+import { eq, desc, asc, and, sql } from "drizzle-orm";
 import { SEED_LESSONS, SEED_ACHIEVEMENTS } from "@/db/seed-data";
 import { TypingResultData } from "@/components/results-modal";
 
@@ -79,7 +79,7 @@ export async function getCurriculumLessons(userId?: string) {
       const dbLessons = await db
         .select()
         .from(schema.lessons)
-        .orderBy(schema.lessons.orderIndex);
+        .orderBy(asc(schema.lessons.level), asc(schema.lessons.orderIndex));
 
       if (dbLessons.length > 0) {
         let attempts: any[] = [];
@@ -90,17 +90,20 @@ export async function getCurriculumLessons(userId?: string) {
             .where(eq(schema.lessonAttempts.userId, userId));
         }
 
-        const attemptMap = new Map<string, { wpm: number; accuracy: number }>();
+        const attemptMap = new Map<string, { wpm: number; accuracy: number; passed: boolean }>();
         for (const a of attempts) {
+          const isPassed = a.accuracy >= 90;
           const existing = attemptMap.get(a.lessonId);
-          if (!existing || a.wpm > existing.wpm) {
-            attemptMap.set(a.lessonId, { wpm: a.wpm, accuracy: a.accuracy });
+          if (isPassed && (!existing || a.wpm > existing.wpm)) {
+            attemptMap.set(a.lessonId, { wpm: a.wpm, accuracy: a.accuracy, passed: true });
+          } else if (!existing) {
+            attemptMap.set(a.lessonId, { wpm: a.wpm, accuracy: a.accuracy, passed: isPassed });
           }
         }
 
         return dbLessons.map((l) => ({
           ...l,
-          completed: attemptMap.has(l.id),
+          completed: attemptMap.get(l.id)?.passed || false,
           bestWpm: attemptMap.get(l.id)?.wpm || null,
           bestAccuracy: attemptMap.get(l.id)?.accuracy || null,
         }));
@@ -114,9 +117,10 @@ export async function getCurriculumLessons(userId?: string) {
   const localUser = userId ? getOrCreateLocalUser(userId) : null;
   return SEED_LESSONS.map((l) => {
     const attempt = localUser?.lessonAttempts[l.id];
+    const isPassed = attempt ? attempt.accuracy >= 90 : false;
     return {
       ...l,
-      completed: Boolean(attempt),
+      completed: isPassed,
       bestWpm: attempt?.wpm || null,
       bestAccuracy: attempt?.accuracy || null,
     };
@@ -125,7 +129,24 @@ export async function getCurriculumLessons(userId?: string) {
 
 export async function getLessonById(lessonId: string, userId?: string) {
   const all = await getCurriculumLessons(userId);
-  return all.find((l) => l.id === lessonId) || null;
+  const index = all.findIndex((l) => l.id === lessonId);
+  if (index === -1) return null;
+
+  const current = all[index];
+  const nextLesson = index < all.length - 1 ? all[index + 1] : null;
+  const prevLesson = index > 0 ? all[index - 1] : null;
+
+  const sameLevelLessons = all.filter((l) => l.level === current.level);
+  const isLastLessonOfLevel = sameLevelLessons[sameLevelLessons.length - 1]?.id === current.id;
+
+  return {
+    ...current,
+    nextLessonId: nextLesson ? nextLesson.id : null,
+    nextLessonTitle: nextLesson ? nextLesson.title : null,
+    nextLessonLevel: nextLesson ? nextLesson.level : null,
+    isLastLessonOfLevel,
+    prevLessonId: prevLesson ? prevLesson.id : null,
+  };
 }
 
 // ----------------- RECORD LESSON & SESSION -----------------

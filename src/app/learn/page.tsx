@@ -88,6 +88,7 @@ export default function LearnPage() {
   const [lessons, setLessons] = useState<LessonItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeLevel, setActiveLevel] = useState<number>(1);
+  const [lockedNotice, setLockedNotice] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchCurriculum() {
@@ -106,6 +107,43 @@ export default function LearnPage() {
     fetchCurriculum();
   }, []);
 
+  // Compute status for all 10 levels:
+  // Level 1 is always unlocked.
+  // Level L (L > 1) is unlocked ONLY if all lessons in Level L - 1 are completed.
+  const levelStatus = React.useMemo(() => {
+    const status: Record<
+      number,
+      { total: number; completed: number; isCompleted: boolean; isUnlocked: boolean }
+    > = {};
+
+    for (let lvl = 1; lvl <= 10; lvl++) {
+      const lvlLessons = lessons.filter((l) => l.level === lvl);
+      const completedCount = lvlLessons.filter((l) => l.completed).length;
+      const isCompleted = lvlLessons.length > 0 && completedCount === lvlLessons.length;
+      const isUnlocked = lvl === 1 ? true : Boolean(status[lvl - 1]?.isCompleted);
+
+      status[lvl] = {
+        total: lvlLessons.length,
+        completed: completedCount,
+        isCompleted,
+        isUnlocked,
+      };
+    }
+    return status;
+  }, [lessons]);
+
+  // Default to the first in-progress unlocked level once lessons load
+  useEffect(() => {
+    if (lessons.length > 0) {
+      for (let lvl = 1; lvl <= 10; lvl++) {
+        if (levelStatus[lvl]?.isUnlocked && !levelStatus[lvl]?.isCompleted) {
+          setActiveLevel(lvl);
+          break;
+        }
+      }
+    }
+  }, [lessons, levelStatus]);
+
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center p-12">
@@ -120,6 +158,20 @@ export default function LearnPage() {
   const levels = Array.from({ length: 10 }, (_, i) => i + 1);
   const currentLevelLessons = lessons.filter((l) => l.level === activeLevel);
   const totalCompleted = lessons.filter((l) => l.completed).length;
+  const isCurrentLevelUnlocked = levelStatus[activeLevel]?.isUnlocked ?? true;
+
+  const handleLevelTabClick = (lvl: number) => {
+    const status = levelStatus[lvl];
+    if (!status?.isUnlocked) {
+      setLockedNotice(
+        `🔒 Level ${lvl} is locked! Complete all lessons in Level ${lvl - 1} with 90%+ accuracy to unlock it.`
+      );
+      setTimeout(() => setLockedNotice(null), 5000);
+      return;
+    }
+    setActiveLevel(lvl);
+    setLockedNotice(null);
+  };
 
   return (
     <div className="w-full max-w-6xl mx-auto px-6 sm:px-10 py-8 flex flex-col gap-8">
@@ -166,6 +218,22 @@ export default function LearnPage() {
         </div>
       </div>
 
+      {/* Locked Notice Alert Banner */}
+      {lockedNotice && (
+        <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-300 flex items-center justify-between gap-3 animate-in fade-in duration-200 shadow-md">
+          <div className="flex items-center gap-2.5">
+            <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+            <span className="font-semibold">{lockedNotice}</span>
+          </div>
+          <button
+            onClick={() => setLockedNotice(null)}
+            className="text-[11px] font-bold text-amber-400/80 hover:text-amber-200"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Level Selector Tabs */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
         {levels.map((lvl) => {
@@ -173,18 +241,22 @@ export default function LearnPage() {
           const lvlCompleted = lvlLessons.filter((l) => l.completed).length;
           const isAllDone = lvlLessons.length > 0 && lvlCompleted === lvlLessons.length;
           const isSelected = activeLevel === lvl;
+          const isUnlocked = levelStatus[lvl]?.isUnlocked ?? false;
 
           return (
             <button
               key={lvl}
-              onClick={() => setActiveLevel(lvl)}
+              onClick={() => handleLevelTabClick(lvl)}
               className={cn(
                 "px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-150 flex items-center gap-2 border",
                 isSelected
                   ? "bg-[#D4F36B] text-[#0D0F14] border-[#D4F36B] shadow-md shadow-[#D4F36B]/20"
-                  : "bg-[#13161F] text-[#858B99] hover:text-[#F1F3F5] border-[#1E2333]"
+                  : isUnlocked
+                  ? "bg-[#13161F] text-[#858B99] hover:text-[#F1F3F5] border-[#1E2333]"
+                  : "bg-[#090A0F]/60 text-[#858B99]/40 border-[#1E2333]/40 cursor-not-allowed hover:border-amber-500/30"
               )}
             >
+              {!isUnlocked && <Lock className="w-3.5 h-3.5 text-amber-400/60" />}
               <span>Level {lvl}</span>
               {isAllDone && (
                 <CheckCircle2
@@ -196,21 +268,42 @@ export default function LearnPage() {
         })}
       </div>
 
-      {/* Level Description Card */}
-      <div className="p-6 rounded-3xl bg-[#13161F] border border-[#1E2333] flex flex-col gap-1">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#8B7CFF]">
-            {LEVEL_NAMES[activeLevel]?.keysCount}
-          </span>
-          <span className="text-xs text-[#858B99]">Target: 90%+ Accuracy to pass</span>
+      {!isCurrentLevelUnlocked ? (
+        /* Locked Level Screen */
+        <div className="p-12 rounded-3xl bg-[#13161F] border border-[#1E2333] flex flex-col items-center justify-center text-center gap-4 shadow-xl">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="flex flex-col gap-1 max-w-md">
+            <h2 className="text-2xl font-black text-[#F1F3F5]">Level {activeLevel} is Locked</h2>
+            <p className="text-xs sm:text-sm text-[#858B99] leading-relaxed">
+              Complete all lessons in Level {activeLevel - 1} with at least 90% accuracy to unlock Level {activeLevel}.
+            </p>
+          </div>
+          <button
+            onClick={() => setActiveLevel(activeLevel - 1)}
+            className="mt-2 px-5 py-2.5 rounded-xl bg-[#D4F36B] hover:bg-[#bde050] text-[#0D0F14] text-xs font-bold transition-all shadow-md shadow-[#D4F36B]/20"
+          >
+            Go to Level {activeLevel - 1}
+          </button>
         </div>
-        <h2 className="text-2xl font-black text-[#F1F3F5] mt-1">
-          {LEVEL_NAMES[activeLevel]?.title}
-        </h2>
-        <p className="text-xs sm:text-sm text-[#858B99] mt-1">
-          {LEVEL_NAMES[activeLevel]?.subtitle}
-        </p>
-      </div>
+      ) : (
+        <>
+          {/* Level Description Card */}
+          <div className="p-6 rounded-3xl bg-[#13161F] border border-[#1E2333] flex flex-col gap-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-[#8B7CFF]">
+                {LEVEL_NAMES[activeLevel]?.keysCount}
+              </span>
+              <span className="text-xs text-[#858B99]">Target: 90%+ Accuracy to pass</span>
+            </div>
+            <h2 className="text-2xl font-black text-[#F1F3F5] mt-1">
+              {LEVEL_NAMES[activeLevel]?.title}
+            </h2>
+            <p className="text-xs sm:text-sm text-[#858B99] mt-1">
+              {LEVEL_NAMES[activeLevel]?.subtitle}
+            </p>
+          </div>
 
       {/* Lessons Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -291,6 +384,8 @@ export default function LearnPage() {
           );
         })}
       </div>
+    </>
+      )}
     </div>
   );
 }
