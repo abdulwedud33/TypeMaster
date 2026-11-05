@@ -59,7 +59,7 @@ export default function LessonRunnerPage() {
   const [lessonResult, setLessonResult] = useState<TypingResultData | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [countdownAction, setCountdownAction] = useState<
-    "next_exercise" | "retry_exercise" | "next_lesson" | "retry_lesson" | null
+    "next_exercise" | "retry_exercise" | "next_lesson" | null
   >(null);
   const [isTimerPaused, setIsTimerPaused] = useState<boolean>(false);
 
@@ -104,12 +104,6 @@ export default function LessonRunnerPage() {
         } else {
           router.push("/learn");
         }
-      } else if (countdownAction === "retry_lesson") {
-        setLessonResult(null);
-        setCountdown(null);
-        setCountdownAction(null);
-        setCurrentExerciseIndex(0);
-        setAttemptKey((k) => k + 1);
       }
       return;
     }
@@ -194,18 +188,25 @@ export default function LessonRunnerPage() {
 
   // Exercise and Lesson completion handler
   const handleEngineComplete = async (results: TypingResultData) => {
-    if (!isLastExercise) {
-      // Sub-exercise completion (drills 1 through 4)
+    const isPassed = results.accuracy >= 90;
+
+    // If failed on ANY exercise (whether exercise 1, 2, 3, 4, OR the final exercise):
+    // Only retry this specific failed exercise! Never force retaking earlier completed exercises.
+    if (!isPassed) {
       setExerciseResult(results);
-      if (results.accuracy >= 90) {
-        setCountdown(3);
-        setCountdownAction("next_exercise");
-      } else {
-        setCountdown(4);
-        setCountdownAction("retry_exercise");
-      }
+      setCountdown(4);
+      setCountdownAction("retry_exercise");
+      return;
+    }
+
+    // If passed:
+    if (!isLastExercise) {
+      // Sub-exercise 1..4 passed -> Advance to next exercise
+      setExerciseResult(results);
+      setCountdown(3);
+      setCountdownAction("next_exercise");
     } else {
-      // Final exercise completion (drill 5) -> Completes whole lesson
+      // Final exercise (5 of 5) passed -> Entire lesson mastered!
       setLessonResult(results);
 
       // Save lesson attempt in database
@@ -219,13 +220,8 @@ export default function LessonRunnerPage() {
         console.error("Failed to save lesson attempt:", err);
       }
 
-      if (results.accuracy >= 90) {
-        setCountdown(4);
-        setCountdownAction("next_lesson");
-      } else {
-        setCountdown(4);
-        setCountdownAction("retry_lesson");
-      }
+      setCountdown(4);
+      setCountdownAction("next_lesson");
     }
   };
 
@@ -253,7 +249,7 @@ export default function LessonRunnerPage() {
     }
   };
 
-  const handleImmediateRetryLesson = () => {
+  const handleImmediateReplayWholeLesson = () => {
     setLessonResult(null);
     setCountdown(null);
     setCountdownAction(null);
@@ -378,7 +374,7 @@ export default function LessonRunnerPage() {
                   <span className="font-bold text-sm text-[#F1F3F5]">
                     {exerciseResult.accuracy >= 90
                       ? `Exercise ${currentExerciseIndex + 1} Passed!`
-                      : `Try Again (Accuracy Below 90%)`}
+                      : `Try Again: Exercise ${currentExerciseIndex + 1} of ${totalExercises}`}
                   </span>
                   <span className="px-2 py-0.5 rounded-md bg-[#090A0F] text-xs font-mono font-bold text-[#D4F36B] border border-[#1E2333]">
                     {exerciseResult.wpm} WPM • {exerciseResult.accuracy}% Acc
@@ -413,7 +409,7 @@ export default function LessonRunnerPage() {
                   onClick={handleImmediateRetryExercise}
                   className="px-4 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-[#0D0F14] text-xs font-bold transition-all shadow-md shadow-amber-500/20 flex items-center gap-1.5"
                 >
-                  <RotateCcw className="w-3.5 h-3.5" /> Retry Now ({countdown}s)
+                  <RotateCcw className="w-3.5 h-3.5" /> Retry Exercise Now ({countdown}s)
                 </button>
               )}
             </div>
@@ -597,62 +593,36 @@ export default function LessonRunnerPage() {
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-3 border-t border-[#1E2333]">
               <div className="text-xs text-[#858B99] text-center sm:text-left">
                 {!isTimerPaused && countdown !== null ? (
-                  lessonResult.accuracy >= 90 ? (
-                    <span>
-                      Advancing to{" "}
-                      <strong className="text-[#D4F36B]">
-                        {lesson.isLastLessonOfLevel
-                          ? `Level ${lesson.level + 1}`
-                          : lesson.nextLessonTitle || "Next Lesson"}
-                      </strong>{" "}
-                      in <span className="font-mono font-bold text-[#F1F3F5]">{countdown}s</span>
-                    </span>
-                  ) : (
-                    <span>
-                      Accuracy below 90%. Restarting lesson in{" "}
-                      <span className="font-mono font-bold text-amber-400">{countdown}s</span>
-                    </span>
-                  )
+                  <span>
+                    Advancing to{" "}
+                    <strong className="text-[#D4F36B]">
+                      {lesson.isLastLessonOfLevel
+                        ? `Level ${lesson.level + 1}`
+                        : lesson.nextLessonTitle || "Next Lesson"}
+                    </strong>{" "}
+                    in <span className="font-mono font-bold text-[#F1F3F5]">{countdown}s</span>
+                  </span>
                 ) : (
                   <span>Timer paused. Choose an option to proceed.</span>
                 )}
               </div>
 
               <div className="flex items-center gap-3">
-                {lessonResult.accuracy >= 90 ? (
-                  <>
-                    <button
-                      onClick={handleImmediateRetryLesson}
-                      className="px-4 py-2.5 rounded-xl bg-[#090A0F] hover:bg-[#1E2333] text-[#F1F3F5] text-xs font-semibold transition-colors flex items-center gap-2 border border-[#1E2333]"
-                    >
-                      <RotateCcw className="w-4 h-4" /> Replay Lesson
-                    </button>
-                    <button
-                      onClick={handleImmediateNextLesson}
-                      className="px-5 py-2.5 rounded-xl bg-[#D4F36B] hover:bg-[#bde050] text-[#0D0F14] text-xs font-bold transition-colors flex items-center gap-2 shadow-lg shadow-[#D4F36B]/20 uppercase tracking-wider"
-                    >
-                      {lesson.isLastLessonOfLevel
-                        ? `Enter Level ${lesson.level + 1}`
-                        : "Next Lesson"}{" "}
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link
-                      href="/learn"
-                      className="px-4 py-2.5 rounded-xl bg-[#090A0F] hover:bg-[#1E2333] text-[#858B99] hover:text-[#F1F3F5] text-xs font-semibold transition-colors flex items-center gap-2 border border-[#1E2333]"
-                    >
-                      Curriculum
-                    </Link>
-                    <button
-                      onClick={handleImmediateRetryLesson}
-                      className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-[#0D0F14] text-xs font-bold transition-colors flex items-center gap-2 shadow-lg shadow-amber-500/20 uppercase tracking-wider"
-                    >
-                      <RotateCcw className="w-4 h-4" /> Retry Lesson Now
-                    </button>
-                  </>
-                )}
+                <button
+                  onClick={handleImmediateReplayWholeLesson}
+                  className="px-4 py-2.5 rounded-xl bg-[#090A0F] hover:bg-[#1E2333] text-[#F1F3F5] text-xs font-semibold transition-colors flex items-center gap-2 border border-[#1E2333]"
+                >
+                  <RotateCcw className="w-4 h-4" /> Replay Lesson
+                </button>
+                <button
+                  onClick={handleImmediateNextLesson}
+                  className="px-5 py-2.5 rounded-xl bg-[#D4F36B] hover:bg-[#bde050] text-[#0D0F14] text-xs font-bold transition-colors flex items-center gap-2 shadow-lg shadow-[#D4F36B]/20 uppercase tracking-wider"
+                >
+                  {lesson.isLastLessonOfLevel
+                    ? `Enter Level ${lesson.level + 1}`
+                    : "Next Lesson"}{" "}
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
             </div>
           </div>
