@@ -49,6 +49,7 @@ export default function LessonRunnerPage() {
 
   const [lesson, setLesson] = useState<LessonData | null>(null);
   const [isLevelUnlocked, setIsLevelUnlocked] = useState<boolean>(true);
+  const [isLessonUnlocked, setIsLessonUnlocked] = useState<boolean>(true);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState<number>(0);
   const [attemptKey, setAttemptKey] = useState<number>(0);
   const [loading, setLoading] = useState(true);
@@ -70,6 +71,7 @@ export default function LessonRunnerPage() {
           const data = await res.json();
           setLesson(data.lesson);
           setIsLevelUnlocked(data.isLevelUnlocked ?? true);
+          setIsLessonUnlocked(data.isLessonUnlocked ?? true);
         }
       } catch (err) {
         console.error("Failed to load lesson:", err);
@@ -144,16 +146,20 @@ export default function LessonRunnerPage() {
     );
   }
 
-  // Level Locked Guard
-  if (!isLevelUnlocked) {
+  // Level or Lesson Locked Guard
+  if (!isLevelUnlocked || !isLessonUnlocked) {
     return (
       <div className="w-full max-w-xl mx-auto px-6 py-16 flex flex-col items-center justify-center text-center gap-4">
         <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
           <Lock className="w-8 h-8" />
         </div>
-        <h2 className="text-2xl font-black text-[#F1F3F5]">Level {lesson.level} is Locked</h2>
+        <h2 className="text-2xl font-black text-[#F1F3F5]">
+          {!isLevelUnlocked ? `Level ${lesson.level} is Locked` : `Lesson ${lesson.orderIndex} is Locked`}
+        </h2>
         <p className="text-xs sm:text-sm text-[#858B99] leading-relaxed max-w-md">
-          You must complete all lessons in Level {lesson.level - 1} with at least 90% accuracy before you can access this lesson.
+          {!isLevelUnlocked
+            ? `You must complete all lessons in Level ${lesson.level - 1} with at least 90% accuracy before you can access this level.`
+            : `You must complete previous lessons with at least 90% accuracy to unlock this lesson. Sequential progression builds reliable finger muscle memory.`}
         </p>
         <Link
           href="/learn"

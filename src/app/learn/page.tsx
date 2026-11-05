@@ -27,6 +27,7 @@ interface LessonItem {
   targetKeys: string;
   fingerNotes: string;
   completed?: boolean;
+  unlocked?: boolean;
   bestWpm?: number | null;
   bestAccuracy?: number | null;
 }
@@ -308,14 +309,18 @@ export default function LearnPage() {
       {/* Lessons Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {currentLevelLessons.map((lesson) => {
+          const isLessonUnlocked = lesson.unlocked ?? true;
+
           return (
             <div
               key={lesson.id}
               className={cn(
-                "p-6 rounded-3xl bg-[#13161F] border transition-all duration-200 flex flex-col justify-between gap-4 group",
-                lesson.completed
-                  ? "border-emerald-500/30 hover:border-emerald-500/60"
-                  : "border-[#1E2333] hover:border-[#D4F36B]/60"
+                "p-6 rounded-3xl border transition-all duration-200 flex flex-col justify-between gap-4 group",
+                !isLessonUnlocked
+                  ? "bg-[#0c0e15]/60 border-[#1E2333]/40 opacity-60 cursor-not-allowed select-none"
+                  : lesson.completed
+                  ? "bg-[#13161F] border-emerald-500/30 hover:border-emerald-500/60"
+                  : "bg-[#13161F] border-[#1E2333] hover:border-[#D4F36B]/60 shadow-lg shadow-[#D4F36B]/5"
               )}
             >
               <div className="flex flex-col gap-2">
@@ -323,7 +328,11 @@ export default function LearnPage() {
                   <span className="text-xs font-mono font-bold text-[#858B99]">
                     Lesson {lesson.orderIndex}
                   </span>
-                  {lesson.completed ? (
+                  {!isLessonUnlocked ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-mono px-2 py-0.5 rounded bg-[#090A0F] text-amber-400/80 border border-amber-500/20">
+                      <Lock className="w-3 h-3" /> Locked
+                    </span>
+                  ) : lesson.completed ? (
                     <span className="inline-flex items-center gap-1 text-[11px] text-emerald-400 font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Completed
                     </span>
@@ -334,7 +343,14 @@ export default function LearnPage() {
                   )}
                 </div>
 
-                <h3 className="text-base font-bold text-[#F1F3F5] group-hover:text-[#D4F36B] transition-colors">
+                <h3
+                  className={cn(
+                    "text-base font-bold transition-colors",
+                    !isLessonUnlocked
+                      ? "text-[#858B99]"
+                      : "text-[#F1F3F5] group-hover:text-[#D4F36B]"
+                  )}
+                >
                   {lesson.title}
                 </h3>
                 <p className="text-xs text-[#858B99] leading-relaxed">
@@ -351,34 +367,45 @@ export default function LearnPage() {
 
               {/* Action & Stats Footer */}
               <div className="flex items-center justify-between pt-3 border-t border-[#1E2333]">
-                {lesson.completed && lesson.bestWpm ? (
-                  <div className="flex items-center gap-3 text-xs">
-                    <span className="text-[#D4F36B] font-mono font-bold">{lesson.bestWpm} WPM</span>
-                    <span className="text-[#858B99] font-mono">{lesson.bestAccuracy}% Acc</span>
-                  </div>
-                ) : (
-                  <span className="text-xs text-[#858B99] italic">5 step exercises</span>
-                )}
+                {!isLessonUnlocked ? (
+                  <>
+                    <span className="text-[11px] text-[#858B99]/70 italic">
+                      Complete previous lesson to unlock
+                    </span>
+                    <div className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#090A0F]/60 text-[#858B99]/50 border border-[#1E2333]/40 flex items-center gap-1.5 cursor-not-allowed">
+                      <Lock className="w-3.5 h-3.5 text-amber-500/50" /> Locked
+                    </div>
+                  </>
+                ) : lesson.completed && lesson.bestWpm ? (
+                  <>
+                    <div className="flex items-center gap-3 text-xs">
+                      <span className="text-[#D4F36B] font-mono font-bold">
+                        {lesson.bestWpm} WPM
+                      </span>
+                      <span className="text-[#858B99] font-mono">
+                        {lesson.bestAccuracy}% Acc
+                      </span>
+                    </div>
 
-                <Link
-                  href={`/learn/${lesson.id}`}
-                  className={cn(
-                    "px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5",
-                    lesson.completed
-                      ? "bg-[#090A0F] hover:bg-[#1E2333] text-[#F1F3F5] border border-[#1E2333]"
-                      : "bg-[#D4F36B] hover:bg-[#bde050] text-[#0D0F14] shadow-sm shadow-[#D4F36B]/20 uppercase tracking-wider"
-                  )}
-                >
-                  {lesson.completed ? (
-                    <>
+                    <Link
+                      href={`/learn/${lesson.id}`}
+                      className="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-[#090A0F] hover:bg-[#1E2333] text-[#F1F3F5] border border-[#1E2333]"
+                    >
                       <RotateCcw className="w-3.5 h-3.5" /> Revisit
-                    </>
-                  ) : (
-                    <>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-xs text-[#858B99] italic">5 step exercises</span>
+
+                    <Link
+                      href={`/learn/${lesson.id}`}
+                      className="px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 bg-[#D4F36B] hover:bg-[#bde050] text-[#0D0F14] shadow-sm shadow-[#D4F36B]/20 uppercase tracking-wider"
+                    >
                       Start Drill <ArrowRight className="w-3.5 h-3.5" />
-                    </>
-                  )}
-                </Link>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           );

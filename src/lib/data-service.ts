@@ -101,12 +101,19 @@ export async function getCurriculumLessons(userId?: string) {
           }
         }
 
-        return dbLessons.map((l) => ({
-          ...l,
-          completed: attemptMap.get(l.id)?.passed || false,
-          bestWpm: attemptMap.get(l.id)?.wpm || null,
-          bestAccuracy: attemptMap.get(l.id)?.accuracy || null,
-        }));
+        let prevCompleted = true;
+        return dbLessons.map((l, idx) => {
+          const isCompleted = attemptMap.get(l.id)?.passed || false;
+          const isUnlocked = idx === 0 ? true : prevCompleted;
+          prevCompleted = isCompleted;
+          return {
+            ...l,
+            completed: isCompleted,
+            unlocked: isUnlocked,
+            bestWpm: attemptMap.get(l.id)?.wpm || null,
+            bestAccuracy: attemptMap.get(l.id)?.accuracy || null,
+          };
+        });
       }
     } catch (e) {
       console.warn("Database lessons lookup fallback to seed:", e);
@@ -115,12 +122,16 @@ export async function getCurriculumLessons(userId?: string) {
 
   // Local fallback
   const localUser = userId ? getOrCreateLocalUser(userId) : null;
-  return SEED_LESSONS.map((l) => {
+  let prevLocalCompleted = true;
+  return SEED_LESSONS.map((l, idx) => {
     const attempt = localUser?.lessonAttempts[l.id];
     const isPassed = attempt ? attempt.accuracy >= 90 : false;
+    const isUnlocked = idx === 0 ? true : prevLocalCompleted;
+    prevLocalCompleted = isPassed;
     return {
       ...l,
       completed: isPassed,
+      unlocked: isUnlocked,
       bestWpm: attempt?.wpm || null,
       bestAccuracy: attempt?.accuracy || null,
     };
@@ -141,11 +152,14 @@ export async function getLessonById(lessonId: string, userId?: string) {
 
   return {
     ...current,
+    unlocked: current.unlocked ?? (index === 0 ? true : Boolean(all[index - 1]?.completed)),
     nextLessonId: nextLesson ? nextLesson.id : null,
     nextLessonTitle: nextLesson ? nextLesson.title : null,
     nextLessonLevel: nextLesson ? nextLesson.level : null,
     isLastLessonOfLevel,
     prevLessonId: prevLesson ? prevLesson.id : null,
+    prevLessonTitle: prevLesson ? prevLesson.title : null,
+    prevLessonOrderIndex: prevLesson ? prevLesson.orderIndex : null,
   };
 }
 

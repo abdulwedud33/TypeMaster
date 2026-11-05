@@ -28,7 +28,13 @@ export async function GET(
   }
 
   const isLevelUnlocked = levelStatus[lesson.level]?.isUnlocked ?? true;
+  const isLessonUnlocked = (lesson.unlocked ?? true) && isLevelUnlocked;
 
-  return NextResponse.json({ lesson, isLevelUnlocked, levelStatus });
+  return NextResponse.json({
+    lesson,
+    isLevelUnlocked,
+    isLessonUnlocked,
+    levelStatus,
+  });
 }
 
